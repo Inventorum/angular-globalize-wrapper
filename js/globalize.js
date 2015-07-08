@@ -5,6 +5,7 @@ var glModule = angular.module('globalizeWrapper', []);
 glModule.provider('globalizeWrapper', function () {
     var cldrBasePath = 'bower_components/cldr-data';
     var l10nBasePath = 'l10n';
+    var l10nEnabled = true;
     var mainResources = [
         '/currencies.json',
         '/ca-gregorian.json',
@@ -76,13 +77,19 @@ glModule.provider('globalizeWrapper', function () {
                 }
             );
 
-            messagesLoaded = false;
-            $http.get(l10nBasePath + '/' + currentLocale + '.json')
-                .then(function (result) {
-                    messagesData[currentLocale] = result.data[currentLocale];
-                    messagesLoaded = true;
-                    finishLoading();
-                });
+            if(l10nEnabled) {
+                messagesLoaded = false;
+
+                $http.get(l10nBasePath + '/' + currentLocale + '.json')
+                  .then(function (result) {
+                      messagesData[currentLocale] = result.data[currentLocale];
+                      messagesLoaded = true;
+                      finishLoading();
+                  });
+            } else {
+                //just ignore message loading
+                messagesLoaded = true;
+            }
         };
 
         function finishLoading() {
@@ -97,9 +104,11 @@ glModule.provider('globalizeWrapper', function () {
                 if (data.length) {
                     Globalize.load(data);
 
-                    var messages = {};
-                    messages[currentLocale] = messagesData[currentLocale];
-                    Globalize.loadMessages(messages);
+                    if (l10nEnabled) {
+                        var messages = {};
+                        messages[currentLocale] = messagesData[currentLocale];
+                        Globalize.loadMessages(messages);
+                    }
                     
                     instance = Globalize(currentLocale);
                 }
@@ -133,6 +142,10 @@ glModule.provider('globalizeWrapper', function () {
 
     this.setL10nBasePath = function (path) {
         l10nBasePath = path;
+    };
+
+    this.setL10nEnabled = function(status) {
+        l10nEnabled = status;
     };
 
     this.setMainResources = function (resources) {
