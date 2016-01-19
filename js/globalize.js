@@ -19,7 +19,7 @@ glModule.provider('globalizeWrapper', function () {
         '/timeData.json',
         '/weekData.json'
     ];
- 
+
     this.$get = [ '$q', '$http', '$rootScope', function ($q, $http, $rootScope) {
         var globalizeInstances = {}, currentLocale = null, localeChanged = false;
         var mainLoaded = false, supplementalLoaded = false, messagesLoaded = false;
@@ -65,18 +65,29 @@ glModule.provider('globalizeWrapper', function () {
             }
 
             mainLoaded = false;
-            loadResources(
-                cldrBasePath + '/main/' + currentLocale,
-                mainResources,
-                function (results) {
-                    mainData = [];
-                    for (var i = 0; i < results.length; i++)
-                        mainData.push(results[i].data);
-                    mainLoaded = true;
-                    finishLoading();
-                }
-            );
+            $http.get(cldrBasePath + '/availableLocales.json').then(function(results) {
+              var availableLocales = results.data.availableLocales;
 
+              var allResources = [];
+              for(var i = 0; i < availableLocales.length; i++) {
+                var locale = availableLocales[i];
+                allResources = allResources.concat(mainResources.map(function(mr) {
+                  return '/'+locale+mr;
+                }));
+              }
+              loadResources(
+                  cldrBasePath + '/main/',
+                  allResources,
+                  function (results) {
+                      mainData = [];
+                      for (var i = 0; i < results.length; i++)
+                          mainData.push(results[i].data);
+                      mainLoaded = true;
+                      finishLoading();
+                  }
+              );
+
+            });
             if(l10nEnabled) {
                 messagesLoaded = false;
 
