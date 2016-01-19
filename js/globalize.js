@@ -42,14 +42,18 @@ glModule.provider('globalizeWrapper', function () {
                     mainLoaded = true;
                     mainData = [];
                     for (var i = 0; i < results.length; i++)
+                    {
                         mainData.push(results[i].data);
+                    }
 
                     loadResources(
                         cldrBasePath + '/supplemental',
                         supplementalResources,
                         function (results) {
                             for (var i = 0; i < results.length; i++)
+                            {
                                 supplementalData.push(results[i].data);
+                            }
                             supplementalLoaded = true;
                             finishLoading();
                         }
