@@ -25,16 +25,39 @@ glModule.provider('globalizeWrapper', function () {
         var mainLoaded = false, supplementalLoaded = false, messagesLoaded = false;
         var mainData = [], supplementalData = [], messagesData = {};
 
-        loadResources(
-            cldrBasePath + '/supplemental',
-            supplementalResources,
-            function (results) {
-                for (var i = 0; i < results.length; i++)
-                    supplementalData.push(results[i].data);
-                supplementalLoaded = true;
-                finishLoading();
+          $http.get(cldrBasePath + '/availableLocales.json').then(function(results) {
+            var availableLocales = results.data.availableLocales;
+
+            var allResources = [];
+            for(var i = 0; i < availableLocales.length; i++) {
+              var locale = availableLocales[i];
+              allResources = allResources.concat(mainResources.map(function(mr) {
+                return '/'+locale+mr;
+              }));
             }
-        );
+            loadResources(
+                cldrBasePath + '/main/',
+                allResources,
+                function (results) {
+                    mainLoaded = true;
+                    mainData = [];
+                    for (var i = 0; i < results.length; i++)
+                        mainData.push(results[i].data);
+
+                    loadResources(
+                        cldrBasePath + '/supplemental',
+                        supplementalResources,
+                        function (results) {
+                            for (var i = 0; i < results.length; i++)
+                                supplementalData.push(results[i].data);
+                            supplementalLoaded = true;
+                            finishLoading();
+                        }
+                    );
+                }
+            );
+
+          });
 
         function loadResources(basePath, resources, success) {
             var promises = [];
@@ -64,30 +87,8 @@ glModule.provider('globalizeWrapper', function () {
                 return;
             }
 
-            mainLoaded = false;
-            $http.get(cldrBasePath + '/availableLocales.json').then(function(results) {
-              var availableLocales = results.data.availableLocales;
+            finishLoading();
 
-              var allResources = [];
-              for(var i = 0; i < availableLocales.length; i++) {
-                var locale = availableLocales[i];
-                allResources = allResources.concat(mainResources.map(function(mr) {
-                  return '/'+locale+mr;
-                }));
-              }
-              loadResources(
-                  cldrBasePath + '/main/',
-                  allResources,
-                  function (results) {
-                      mainData = [];
-                      for (var i = 0; i < results.length; i++)
-                          mainData.push(results[i].data);
-                      mainLoaded = true;
-                      finishLoading();
-                  }
-              );
-
-            });
             if(l10nEnabled) {
                 messagesLoaded = false;
 
@@ -120,7 +121,7 @@ glModule.provider('globalizeWrapper', function () {
                         messages[currentLocale] = messagesData[currentLocale];
                         Globalize.loadMessages(messages);
                     }
-                    
+
                     instance = Globalize(currentLocale);
                 }
 
